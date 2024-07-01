@@ -1,0 +1,34 @@
+Build on page w/ Youtube-Transcription-API in the beginning
+
+
+Features:
+    # Output Transcription into a textbox 
+    # Search History (shows date and youtube video name)
+    # Loading Spinner
+        # w/ % Complete bar underneath
+    - Thumbs up, Thumbs down
+    - User Feedback
+    - User Authentication
+    # Dark Mode
+    # Transcription Editing
+    - Real Time Transcription Updates
+    - Enhanced Formatting and Punctation
+        - Hugging Face T5-small model 
+        - Split Transcription into Chunks
+    - Speaker Identification
+    - Named Entity Recognition
+    - Keyword Highlighting
+    - Sentiment Analysis
+    - Summarization
+    - Searchable Transcriptions
+    - Improve speed of Transcription
+    
+
+UI:
+    # Add Color
+    # Make Transcribe button Blue
+    # Add defined black outline around output box
+    # Improved Layout w/ CSS Grid/Flexbox
+    # Make it look cooler
+    # Make Dark Mode/ Light Mode switch look more modern
+    
