@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Full Transcription</title>
+    <title>Transcription</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -20,6 +20,7 @@
             background-color: #ffffff;
             color: #333;
             display: flex;
+            justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: fixed;
@@ -27,59 +28,114 @@
             z-index: 1000;
         }
 
-        .home-icon {
-            margin-right: 20px;
-        }
-
-        .home-icon img {
-            width: 30px;
-            height: 30px;
-        }
-
         h1 {
-            font-size: 2rem;
+            font-size: 3rem;
             margin: 0;
             font-weight: 600;
+            text-align: center;
+            border: 2px solid black;
+            padding: 10px;
+        }
+
+        .dark-mode-toggle {
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
         }
 
         .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
-            margin-top: 80px; /* Adjusted to account for fixed header */
+            margin-top: 120px; /* Adjusted to account for fixed header */
+            background: #fff;
         }
 
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .transcription-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .video-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .video-author {
+            font-size: 1.2rem;
+            color: #555;
+            text-align: center;
             margin-bottom: 20px;
         }
 
-        .transcription-box {
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #ddd;
+        .transcription {
+            font-size: 1rem;
+            color: #333;
+            text-align: left;
         }
 
-        .transcription-title {
-            font-size: 1.5rem;
+        .dark-mode {
+            background-color: #333;
+            color: white;
+        }
+
+        .dark-mode header,
+        .dark-mode .tab-menu hr {
+            background-color: #000;
+            color: white;
+        }
+
+        .dark-mode .transcription-container {
+            background-color: #444;
+            color: white;
+        }
+
+        .dark-mode .video-title,
+        .dark-mode .video-author {
+            color: white;
+        }
+
+        .read-more {
+            display: inline-block;
+            padding: 10px 15px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
             font-weight: 600;
         }
 
-        .transcription-author {
-            font-size: 1.2rem;
-            color: #555;
+        .read-more:hover {
+            background-color: #0056b3;
         }
 
-        .transcription-content {
-            font-size: 1rem;
-            color: #333;
+        .download-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .download-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .back-to-top {
+            display: block;
             margin-top: 20px;
-        }
-
-        .download-button {
-            display: inline-block;
             padding: 10px 15px;
             background-color: #007bff;
             color: white;
@@ -89,56 +145,36 @@
             font-weight: 600;
         }
 
-        .download-button:hover {
-            background-color: #0056b3;
-        }
-
-        .back-to-top {
-            display: inline-block;
-            padding: 10px 15px;
-            margin-top: 20px;
-            background-color: #28a745;
-            color: white;
-            text-align: center;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-        }
-
         .back-to-top:hover {
-            background-color: #218838;
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
     <header>
-        <div class="home-icon">
-            <a href="/">
-                <img src="{{ url_for('static', filename='home-icon.png') }}" alt="Home">
-            </a>
+        <a href="/">
+            <img src="{{ url_for('static', filename='home-icon.png') }}" alt="Home Icon" style="height: 40px;">
+        </a>
+        <h1>The Scribe</h1>
+        <div class="dark-mode-toggle">
+            <label for="dark-mode-switch">Dark Mode</label>
+            <input type="checkbox" id="dark-mode-switch">
         </div>
-        <h1>{{ title }}</h1>
     </header>
     <div class="container">
-        <div class="header-container">
-            <div>
-                <div class="transcription-title">{{ title }}</div>
-                <div class="transcription-author">{{ author }}</div>
-            </div>
-            <a href="/download/{{ video_id }}" class="download-button">Download Transcription</a>
+        <div class="transcription-container">
+            <div class="video-title">{{ title }}</div>
+            <div class="video-author">{{ author }}</div>
+            <div class="transcription">{{ transcription }}</div>
+            <a class="download-btn" href="/download/{{ request.view_args['video_id'] }}">Download Transcription</a>
         </div>
-        <div class="transcription-box">
-            <div class="transcription-content">{{ transcription }}</div>
-        </div>
-        <a href="#" class="back-to-top" onclick="scrollToTop()">Back to the Top</a>
+        <a href="#top" class="back-to-top">Back to the Top</a>
     </div>
     <script>
-        function scrollToTop() {
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
+        document.getElementById('dark-mode-switch').addEventListener('change', function () {
+            document.body.classList.toggle('dark-mode');
+        });
     </script>
 </body>
 </html>
+
