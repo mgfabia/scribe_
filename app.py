@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Add your YouTube Data API key here
 YOUTUBE_API_KEY = 'AIzaSyBq-xfGtyUbbV1UjLVAf18FuYc4iJ_g2-M'
 
-# Specify the channel IDs (please verify these are correct)
+# Specify the channel IDs
 CHANNEL_IDS = [
     'UCGq-a57w-aPwyi3pW7XLiHw',  # Founders Podcast
     'UCQ-rrUCsJLNjFdPtKq0YOfA',  # Diary of a CEO
@@ -22,6 +22,13 @@ CHANNEL_IDS = [
     'UC-yRDvpR99LUc5l7i7jLzew',  # Bg2 Pod
     'UCf0PBRjhf0rF8fWBIxTuoWA'   # 20VC - The Twenty Minute VC
 ]
+
+# Define category mappings
+CATEGORY_CHANNELS = {
+    'interviews': ['UCQ-rrUCsJLNjFdPtKq0YOfA'],  # Diary of a CEO
+    'business': ['UCGq-a57w-aPwyi3pW7XLiHw', 'UC1E1SVcVyU3ntWMSQEp38Yw', 'UC-yRDvpR99LUc5l7i7jLzew', 'UCf0PBRjhf0rF8fWBIxTuoWA'],  # Founders Podcast, The Prof G Show, Bg2 Pod, and 20VC
+    'real_estate': ['UC-yRDvpR99LUc5l7i7jLzew']  # Bg2 Pod
+}
 
 def get_latest_videos(channel_id, max_results=10):
     url = f'https://www.googleapis.com/youtube/v3/search?key={YOUTUBE_API_KEY}&channelId={channel_id}&part=snippet,id&order=date&maxResults={max_results}'
@@ -108,6 +115,26 @@ def api_transcriptions():
 
     return jsonify({'transcriptions': transcriptions})
 
+@app.route('/category/<category>')
+def category_page(category):
+    transcriptions = []
+    channel_ids = CATEGORY_CHANNELS.get(category, [])
+    for channel_id in channel_ids:
+        latest_videos = get_latest_videos(channel_id, max_results=3)
+        for video in latest_videos:
+            transcription, error = get_transcription(video['id'])
+            if error:
+                transcription_text = f"Error: {error}"
+            else:
+                transcription_text = ' '.join(transcription.split()[:140]) + '...'  # First 140 words
+            transcriptions.append({
+                'id': video['id'],
+                'title': video['title'] or 'Title not found',
+                'author': video['author'] or 'Author not found',
+                'transcription': transcription_text
+            })
+    return render_template('category.html', category=category.capitalize(), transcriptions=transcriptions)
+
 @app.route('/transcription/<video_id>')
 def full_transcription(video_id):
     transcription, error = get_transcription(video_id)
@@ -126,4 +153,5 @@ def full_transcription(video_id):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
