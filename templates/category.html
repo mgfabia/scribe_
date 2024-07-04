@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Scribe - {{ category }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin: 0;
+            font-weight: 600;
+            text-align: center;
+            border: 2px solid black;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin-top: 120px; /* Adjusted to account for fixed header */
+            background: #fff;
+        }
+
+        .transcription-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .transcription-item {
+            flex: 1;
+            min-width: 300px;
+            max-width: 33%;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .video-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .video-author {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .transcription {
+            font-size: 1rem;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .read-more {
+            display: inline-block;
+            padding: 10px 15px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .read-more:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ category }}</h1>
+    </header>
+    <div class="container">
+        <div class="transcription-container">
+            {% for item in transcriptions %}
+            <div class="transcription-item">
+                <div class="video-title">{{ item.title }}</div>
+                <div class="video-author">{{ item.author }}</div>
+                <div class="transcription">{{ item.transcription }}</div>
+                <a class="read-more" href="/transcription/{{ item.id }}">Read</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
