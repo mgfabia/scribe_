@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin: 0;
+            font-weight: 600;
+            text-align: center;
+            border: 2px solid black;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-title {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .video-author {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .transcription {
+            font-size: 1rem;
+            color: #333;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+
+        .dark-mode {
+            background-color: #333;
+            color: white;
+        }
+
+        .dark-mode .container {
+            background-color: #444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>The Scribe</h1>
+    </header>
+    <div class="container">
+        <div class="video-title">{{ title }}</div>
+        <div class="video-author">{{ author }}</div>
+        <div class="transcription">{{ transcription }}</div>
+    </div>
+</body>
+</html>

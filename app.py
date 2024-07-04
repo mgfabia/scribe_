@@ -61,5 +61,15 @@ def api_transcriptions():
         })
     return jsonify({'transcriptions': transcriptions})
 
+@app.route('/transcription/<video_id>')
+def full_transcription(video_id):
+    transcription, error = get_transcription(video_id)
+    title, author = get_video_details(video_id)
+    if error:
+        full_transcription_text = f"Error: {error}"
+    else:
+        full_transcription_text = transcription
+    return render_template('transcription.html', title=title, author=author, transcription=full_transcription_text)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
