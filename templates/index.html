@@ -12,11 +12,6 @@
             padding: 0;
             background-color: #f9f9f9;
             color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
         }
 
         header {
@@ -25,204 +20,82 @@
             background-color: #ffffff;
             color: #333;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 4rem;
             margin: 0;
             font-weight: 600;
+            text-align: center;
+            border: 2px solid black;
+            padding: 20px;
         }
 
         .container {
             display: flex;
-            width: 90%;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin-top: 120px; /* Adjusted to account for fixed header */
+            background: #fff;
+        }
+
+        .tab-menu {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .tab-menu div {
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .transcription-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            width: 100%;
             max-width: 1200px;
             padding: 20px;
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 40px;
         }
 
-        .main-content {
-            flex: 3;
-            padding-right: 20px;
-        }
-
-        .history {
+        .transcription-item {
             flex: 1;
+            min-width: 300px;
+            max-width: 33%;
             background: #fff;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-left: 20px;
+            margin-top: 20px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-            width: 100%;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
+        .video-title {
+            font-size: 1.5rem;
             font-weight: 600;
+        }
+
+        .video-author {
+            font-size: 1.2rem;
             color: #555;
         }
 
-        input[type="text"] {
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        button {
-            padding: 12px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        #copy-button {
-            background-color: #28a745;
-        }
-
-        #copy-button:hover {
-            background-color: #218838;
-        }
-
-        #download-button {
-            background-color: #ffc107;
-        }
-
-        #download-button:hover {
-            background-color: #e0a800;
-        }
-
-        textarea {
-            width: 100%;
-            height: 400px;  /* Increased height for longer transcription */
-            margin-top: 20px;
-            font-size: 16px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            box-sizing: border-box;
-            resize: vertical;
-        }
-
-        .button-group {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .button-group button {
-            width: 48%;
-        }
-
-        .spinner {
-            display: none;
-            margin: 20px auto;
-            width: 50px;
-            height: 50px;
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error-message {
-            color: red;
+        .transcription {
+            font-size: 1rem;
+            color: #333;
             margin-top: 10px;
-        }
-
-        .history h2 {
-            font-size: 20px;
-            margin-bottom: 20px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .history ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .history ul li {
-            background: #f9f9f9;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
         }
 
         .dark-mode {
@@ -230,33 +103,25 @@
             color: white;
         }
 
-        .dark-mode input[type="text"],
-        .dark-mode textarea {
-            background-color: #555;
-            color: white;
-            border: 1px solid #444;
-        }
-
-        .dark-mode button {
+        .dark-mode .transcription-container {
             background-color: #444;
             color: white;
         }
 
-        .dark-mode button:hover {
-            background-color: #555;
-        }
-
-        .dark-mode .progress-bar {
-            background-color: #222;
-        }
-
-        .dark-mode .container {
-            background-color: #444;
+        .read-more {
+            display: inline-block;
+            padding: 10px 15px;
+            margin-top: 10px;
+            background-color: #007bff;
             color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
         }
 
-        .dark-mode .history ul li {
-            background-color: #555;
+        .read-more:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -269,36 +134,56 @@
         </label>
     </header>
     <div class="container">
-        <div class="main-content">
-            <div class="form-group">
-                <form id="transcription-form">
-                    <label for="youtube-url">Enter YouTube URL:</label>
-                    <input type="text" id="youtube-url" name="youtube-url" required>
-                    <button type="submit">Get Transcription</button>
-                </form>
-            </div>
-            <div class="spinner" id="spinner"></div>
-            <div class="form-group">
-                <h2>Transcription:</h2>
-                <textarea id="transcription-text" readonly></textarea>
-            </div>
-            <div class="button-group">
-                <button id="copy-button">Copy to Clipboard</button>
-                <button id="download-button">Download Transcription</button>
-            </div>
-            <div class="form-group">
-                <h2>Summary:</h2>
-                <textarea id="summary-text" readonly></textarea>
-            </div>
-            <div class="error-message" id="error-message"></div>
+        <div class="tab-menu">
+            <div>Interviews</div>
+            <div>Business</div>
+            <div>Real Estate</div>
         </div>
-        <div class="history">
-            <h2>History</h2>
-            <ul id="history-list"></ul>
+        <div class="transcription-container" id="transcription-container">
+            <!-- Transcription items will be appended here by JavaScript -->
         </div>
     </div>
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-    <script src="/static/app.js"></script>
+    <script>
+        const socket = io();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Fetch transcriptions from the server
+            fetch('/api/transcriptions')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('transcription-container');
+                    data.transcriptions.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'transcription-item';
+
+                        const title = document.createElement('div');
+                        title.className = 'video-title';
+                        title.textContent = item.title;
+
+                        const author = document.createElement('div');
+                        author.className = 'video-author';
+                        author.textContent = item.author;
+
+                        const transcription = document.createElement('div');
+                        transcription.className = 'transcription';
+                        transcription.textContent = item.transcription;
+
+                        const readMore = document.createElement('a');
+                        readMore.className = 'read-more';
+                        readMore.href = `https://www.youtube.com/watch?v=${item.id}`;
+                        readMore.textContent = 'Read';
+
+                        div.appendChild(title);
+                        div.appendChild(author);
+                        div.appendChild(transcription);
+                        div.appendChild(readMore);
+                        container.appendChild(div);
+                    });
+                })
+                .catch(error => console.error('Error fetching transcriptions:', error));
+        });
+    </script>
 </body>
 </html>
 
