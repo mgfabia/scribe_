@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - The Scribe</title>
+    <title>Full Transcription</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -12,90 +12,133 @@
             padding: 0;
             background-color: #f9f9f9;
             color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
         }
+
         header {
             width: 100%;
             padding: 20px;
             background-color: #ffffff;
             color: #333;
             display: flex;
-            justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
         }
+
+        .home-icon {
+            margin-right: 20px;
+        }
+
+        .home-icon img {
+            width: 30px;
+            height: 30px;
+        }
+
         h1 {
-            font-size: 24px;
+            font-size: 2rem;
             margin: 0;
             font-weight: 600;
         }
+
         .container {
-            display: flex;
-            width: 90%;
-            max-width: 1200px;
             padding: 20px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 40px;
-            flex-direction: column;
+            margin-top: 80px; /* Adjusted to account for fixed header */
         }
-        .transcription {
-            width: 100%;
-            font-size: 16px;
-            line-height: 1.6;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            box-sizing: border-box;
-            resize: vertical;
-        }
-        .button-group {
+
+        .header-container {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .transcription-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+        }
+
+        .transcription-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .transcription-author {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .transcription-content {
+            font-size: 1rem;
+            color: #333;
             margin-top: 20px;
         }
-        .button-group button {
-            width: 48%;
+
+        .download-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
         }
-        .home-icon {
-            cursor: pointer;
+
+        .download-button:hover {
+            background-color: #0056b3;
+        }
+
+        .back-to-top {
+            display: inline-block;
+            padding: 10px 15px;
+            margin-top: 20px;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .back-to-top:hover {
+            background-color: #218838;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>The Scribe</h1>
-        <img src="/static/home_icon.png" alt="Home" class="home-icon" onclick="window.location.href='/'">
+        <div class="home-icon">
+            <a href="/">
+                <img src="{{ url_for('static', filename='home-icon.png') }}" alt="Home">
+            </a>
+        </div>
+        <h1>{{ title }}</h1>
     </header>
     <div class="container">
-        <h2>{{ title }}</h2>
-        <h3>{{ author }}</h3>
-        <div class="transcription">{{ transcription }}</div>
-        <div class="button-group">
-            <button id="download-button">Download Transcription</button>
+        <div class="header-container">
+            <div>
+                <div class="transcription-title">{{ title }}</div>
+                <div class="transcription-author">{{ author }}</div>
+            </div>
+            <a href="/download/{{ video_id }}" class="download-button">Download Transcription</a>
         </div>
+        <div class="transcription-box">
+            <div class="transcription-content">{{ transcription }}</div>
+        </div>
+        <a href="#" class="back-to-top" onclick="scrollToTop()">Back to the Top</a>
     </div>
+    <script>
+        function scrollToTop() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+    </script>
 </body>
-<script>
-    document.getElementById('download-button').addEventListener('click', function () {
-        const title = '{{ title }}';
-        const transcription = '{{ transcription }}';
-        const blob = new Blob([transcription], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `${title}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(url);
-    });
-</script>
 </html>
-
