@@ -59,11 +59,6 @@
             font-weight: 600;
         }
 
-        .tab-menu a {
-            text-decoration: none;
-            color: inherit;
-        }
-
         .transcription-container {
             display: flex;
             flex-wrap: wrap;
@@ -128,6 +123,22 @@
         .read-more:hover {
             background-color: #0056b3;
         }
+
+        /* Loader style */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #007bff;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -136,24 +147,28 @@
     </header>
     <div class="container">
         <div class="tab-menu">
-            <div><a href="/category/interviews">Interviews</a></div>
-            <div><a href="/category/business">Business</a></div>
-            <div><a href="/category/real_estate">Real Estate</a></div>
+            <div onclick="fetchCategory('Interviews')">Interviews</div>
+            <div onclick="fetchCategory('Business')">Business</div>
+            <div onclick="fetchCategory('Real Estate')">Real Estate</div>
         </div>
         <div class="transcription-container" id="transcription-container">
+            <div class="loader" id="loader"></div>
             <!-- Transcription items will be appended here by JavaScript -->
         </div>
     </div>
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
-        const socket = io();
-
         document.addEventListener('DOMContentLoaded', function () {
-            // Fetch transcriptions from the server
+            fetchTranscriptions();
+        });
+
+        function fetchTranscriptions() {
+            document.getElementById('loader').style.display = 'block';
             fetch('/api/transcriptions')
                 .then(response => response.json())
                 .then(data => {
+                    document.getElementById('loader').style.display = 'none';
                     const container = document.getElementById('transcription-container');
+                    container.innerHTML = '';
                     data.transcriptions.forEach(item => {
                         const div = document.createElement('div');
                         div.className = 'transcription-item';
@@ -182,8 +197,53 @@
                         container.appendChild(div);
                     });
                 })
-                .catch(error => console.error('Error fetching transcriptions:', error));
-        });
+                .catch(error => {
+                    document.getElementById('loader').style.display = 'none';
+                    console.error('Error fetching transcriptions:', error);
+                });
+        }
+
+        function fetchCategory(category) {
+            document.getElementById('loader').style.display = 'block';
+            fetch(`/api/category/${category}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loader').style.display = 'none';
+                    const container = document.getElementById('transcription-container');
+                    container.innerHTML = '';
+                    data.transcriptions.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'transcription-item';
+
+                        const title = document.createElement('div');
+                        title.className = 'video-title';
+                        title.textContent = item.title;
+
+                        const author = document.createElement('div');
+                        author.className = 'video-author';
+                        author.textContent = item.author;
+
+                        const transcription = document.createElement('div');
+                        transcription.className = 'transcription';
+                        transcription.textContent = item.transcription;
+
+                        const readMore = document.createElement('a');
+                        readMore.className = 'read-more';
+                        readMore.href = `/transcription/${item.id}`;
+                        readMore.textContent = 'Read';
+
+                        div.appendChild(title);
+                        div.appendChild(author);
+                        div.appendChild(transcription);
+                        div.appendChild(readMore);
+                        container.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    document.getElementById('loader').style.display = 'none';
+                    console.error('Error fetching category:', error);
+                });
+        }
     </script>
 </body>
 </html>
