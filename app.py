@@ -7,8 +7,9 @@ from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisable
 app = Flask(__name__)
 
 programmed_channels = [
-    {'id': 'dQw4w9WgXcQ'},  # Example video ID
-    {'id': 'another_video_id'},  # Add more video IDs as needed
+    {'id': 'ia6Di_ytiSE'},  # Example video ID 1
+    {'id': 'Xuurlc-V2Jg'},  # Example video ID 2 (Replace with actual video ID)
+    {'id': 'k72aCBm7Jpk'}  # Example video ID 2 (Replace with actual video ID)
 ]
 
 # Set your YouTube Data API key here
