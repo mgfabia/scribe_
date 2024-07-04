@@ -12,6 +12,7 @@
             padding: 20px;
             background-color: #f9f9f9;
             color: #333;
+            position: relative;
         }
 
         header {
@@ -23,6 +24,32 @@
             justify-content: center;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .home-icon {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        .download-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .download-button:hover {
+            background-color: #0056b3;
         }
 
         h1 {
@@ -73,12 +100,30 @@
 </head>
 <body>
     <header>
+        <img src="/static/home-icon.png" class="home-icon" alt="Home" onclick="window.location.href='/'">
         <h1>The Scribe</h1>
+        <a id="download-button" class="download-button" href="#">Download Transcription</a>
     </header>
     <div class="container">
         <div class="video-title">{{ title }}</div>
         <div class="video-author">{{ author }}</div>
-        <div class="transcription">{{ transcription }}</div>
+        <div class="transcription" id="transcription-text">{{ transcription }}</div>
     </div>
+
+    <script>
+        document.getElementById('download-button').addEventListener('click', function () {
+            const text = document.getElementById('transcription-text').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transcription.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
 </body>
 </html>
+
