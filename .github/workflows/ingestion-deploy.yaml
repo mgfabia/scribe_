@@ -8,8 +8,9 @@ on:
 
 jobs:
   zip_and_upload:
-    
+  
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -20,6 +21,7 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
+
       - name: Authenticate to GCP
       run: |
         gcloud auth list
