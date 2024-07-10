@@ -26,7 +26,7 @@ jobs:
           zip engine.zip engine.py
 
       - name: Upload to cloud
-        run: gcloud storage cp engine.zip gs://ingestion-engine-code/engine.zip
+        run: gcloud storage cp engine.zip gs://ingestion-engine-code/
 
       # - name: Deploy to Cloud Function
       #   run: gcloud functions deploy ingestion --source=gs://ingestion-engine-code/engine.zip 
