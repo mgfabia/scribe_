@@ -3,7 +3,8 @@ name: Zip and Upload Ingestion Script
 on:
   push:
     branches:
-      - main
+      - '*'
+
 
 jobs:
   zip_and_upload:
