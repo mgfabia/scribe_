@@ -1,0 +1,37 @@
+name: Zip and Upload Ingestion Script
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  zip_and_upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Zip Cloud Function
+        run: |
+          # Replace with your actual build steps to create the Cloud Function
+          # For example, if your function is in a folder named 'my-function':
+          zip -r function.zip my-function
+
+      - name: Upload to GCS bucket
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: function.zip
+          destination: your-bucket-name
+
+      - name: Set output variable
+        id: uploaded_files
+        run: echo "::set-output name=uploaded::$GITHUB_WORKSPACE/function.zip"
+
+      - name: Use the uploaded file path
+        run: echo "The file was uploaded to gs://your-bucket-name/function.zip"
