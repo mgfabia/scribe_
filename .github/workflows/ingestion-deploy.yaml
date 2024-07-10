@@ -8,6 +8,7 @@ on:
 
 jobs:
   zip_and_upload:
+    
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,7 +17,12 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          service_account: ${{ secrets.GCP }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+      - name: Authenticate to GCP
+      run: |
+        gcloud auth list
 
       - name: test
         run: echo 'test'
