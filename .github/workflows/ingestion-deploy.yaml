@@ -18,21 +18,24 @@ jobs:
         with:
           service_account: ${{ secrets.GCP }}
 
-      - name: Zip Cloud Function
-        run: |
-          # Replace with your actual build steps to create the Cloud Function
-          # For example, if your function is in a folder named 'my-function':
-          zip -r function.zip my-function
+      - name: test
+        run: echo 'test'
 
-      - name: Upload to GCS bucket
-        uses: google-github-actions/upload-cloud-storage@v2
-        with:
-          path: function.zip
-          destination: your-bucket-name
+      # - name: Zip Cloud Function
+      #   run: |
+      #     # Replace with your actual build steps to create the Cloud Function
+      #     # For example, if your function is in a folder named 'my-function':
+      #     zip -r function.zip my-function
 
-      - name: Set output variable
-        id: uploaded_files
-        run: echo "::set-output name=uploaded::$GITHUB_WORKSPACE/function.zip"
+      # - name: Upload to GCS bucket
+      #   uses: google-github-actions/upload-cloud-storage@v2
+      #   with:
+      #     path: function.zip
+      #     destination: your-bucket-name
 
-      - name: Use the uploaded file path
-        run: echo "The file was uploaded to gs://your-bucket-name/function.zip"
+      # - name: Set output variable
+      #   id: uploaded_files
+      #   run: echo "::set-output name=uploaded::$GITHUB_WORKSPACE/function.zip"
+
+      # - name: Use the uploaded file path
+      #   run: echo "The file was uploaded to gs://your-bucket-name/function.zip"
