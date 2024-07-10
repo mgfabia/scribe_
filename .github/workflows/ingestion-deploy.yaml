@@ -8,9 +8,7 @@ on:
 
 jobs:
   zip_and_upload:
-  
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
