@@ -26,31 +26,31 @@ jobs:
         with:
           version: 'latest'
 
-     - name: Configure environment variables
-        run: |
-          echo "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
-          echo "GOOGLE_APPLICATION_CREDENTIALS=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
-          echo "GOOGLE_GHA_CREDS_PATH=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
-          echo "CLOUDSDK_CORE_PROJECT=the-scribe-429016" >> $GITHUB_ENV
-          echo "CLOUDSDK_PROJECT=the-scribe-429016" >> $GITHUB_ENV
-          echo "GCLOUD_PROJECT=the-scribe-429016" >> $GITHUB_ENV
-          echo "GCP_PROJECT=the-scribe-429016" >> $GITHUB_ENV
-          echo "GOOGLE_CLOUD_PROJECT=the-scribe-429016" >> $GITHUB_ENV
-          echo "CLOUDSDK_METRICS_ENVIRONMENT=github-actions-setup-gcloud" >> $GITHUB_ENV
-          echo "CLOUDSDK_METRICS_ENVIRONMENT_VERSION=1.1.1" >> $GITHUB_ENV
+      - name: Configure environment variables
+            run: |
+              echo "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
+              echo "GOOGLE_APPLICATION_CREDENTIALS=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
+              echo "GOOGLE_GHA_CREDS_PATH=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
+              echo "CLOUDSDK_CORE_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+              echo "CLOUDSDK_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+              echo "GCLOUD_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+              echo "GCP_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+              echo "GOOGLE_CLOUD_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+              echo "CLOUDSDK_METRICS_ENVIRONMENT=github-actions-setup-gcloud" >> $GITHUB_ENV
+              echo "CLOUDSDK_METRICS_ENVIRONMENT_VERSION=1.1.1" >> $GITHUB_ENV
 
       - name: Save GCP credentials
-        run: echo "${{ secrets.GCP_SA_KEY }}" > /home/runner/work/scribe_/scribe_/gha-creds.json
+          run: echo "${{ secrets.GCP_SA_KEY }}" > /home/runner/work/scribe_/scribe_/gha-creds.json
 
       - name: Verify Project and Credentials
-        run: |
-          gcloud config set project the-scribe-429016
-          gcloud auth activate-service-account --key-file=/home/runner/work/scribe_/scribe_/gha-creds.json
-          gcloud auth list
+          run: |
+            gcloud config set project the-scribe-429016
+            gcloud auth activate-service-account --key-file=/home/runner/work/scribe_/scribe_/gha-creds.json
+            gcloud auth list
 
       - name: List all storage containers (buckets)
-        run: |
-          gcloud storage buckets list
+          run: |
+            gcloud storage buckets list
 
 
       # - name: 'Authenticate to GCP'
@@ -60,11 +60,7 @@ jobs:
       #       workload_identity_provider: 'projects/113330691559/locations/global/workloadIdentityPools/github-actions/providers/github-provider'
            
            
-      - name: checker
-        run: |
-          gcloud auth login
-          
-          gsutil ls
+    
 
       # - name: zip function
       #   run: |
