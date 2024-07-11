@@ -39,8 +39,8 @@ jobs:
           echo "CLOUDSDK_METRICS_ENVIRONMENT=github-actions-setup-gcloud" >> $GITHUB_ENV
           echo "CLOUDSDK_METRICS_ENVIRONMENT_VERSION=1.1.1" >> $GITHUB_ENV
 
-      - name: Save GCP credentials
-        run: echo "${{ secrets.GCP_SA_KEY }}" > /home/runner/work/scribe_/scribe_/gha-creds.json
+      - name: Decode and Save GCP credentials
+        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > /home/runner/work/scribe_/scribe_/gha-creds.json
 
       - name: Verify Project and Credentials
         run: |
