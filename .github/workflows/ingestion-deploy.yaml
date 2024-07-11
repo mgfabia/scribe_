@@ -16,15 +16,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: 'Authenticate to GCP'
-        uses: 'google-github-actions/auth@v0.4.0'
+      - uses: 'google-github-actions/auth@v2'
         with:
-            create_credentials_file: 'true'
-            workload_identity_provider: 'projects/113330691559/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions'
-            service_account: 'github-actions-267@the-scribe-429016.iam.gserviceaccount.com'
-            token_format: "access_token"
-            access_token_lifetime: "120s"
+          credentials_json: '${{ secrets.GCP_SA_KEY }}
 
+          
+      # - name: 'Authenticate to GCP'
+      #   uses: 'google-github-actions/auth@v0.4.0'
+      #   with:
+            
+      #       workload_identity_provider: 'projects/113330691559/locations/global/workloadIdentityPools/github-actions/providers/github-provider'
+           
+           
       # - name: checker
       #   run: |
       #     gcloud auth login
