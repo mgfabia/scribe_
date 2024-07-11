@@ -22,7 +22,7 @@ jobs:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
       - name: curious
-        run: cat /home/runner/work/scribe_/scribe_/gha-creds-dfe4c3a4c506c888.json
+        run: cat /home/runner/work/scribe_/scribe_/gha-creds-*.json
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
