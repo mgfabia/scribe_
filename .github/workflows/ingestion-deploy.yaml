@@ -1,37 +1,41 @@
 name: Zip and Upload Ingestion Script
 
 on:
-  push:
-    branches:
-      - '*'
+  workflow_dispatch
 
 
 jobs:
   zip_and_upload:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: 'Authenticate to GCP'
+        uses: 'google-github-actions/auth@v0.4.0'
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+            create_credentials_file: 'true'
+            workload_identity_provider: 'projects/113330691559/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions'
+            service_account: 'github-actions-267@the-scribe-429016.iam.gserviceaccount.com'
+            token_format: "access_token"
+            access_token_lifetime: "120s"
 
-      - name: checker
-        run: |
-          gcloud auth login
-          gcloud auth application-default login
-          gsutil ls
+      # - name: checker
+      #   run: |
+      #     gcloud auth login
+      #     gcloud auth application-default login
+      #     gsutil ls
 
-      - name: zip function
-        run: |
-          cd engine
-          zip engine.zip engine.py
+      # - name: zip function
+      #   run: |
+      #     cd engine
+      #     zip engine.zip engine.py
 
-      - name: Upload to cloud
-        run: gsutil cp engine.zip gs://ingestion-engine-code/engine.zip
+      # - name: Upload to cloud
+      #   run: gsutil cp engine.zip gs://ingestion-engine-code/engine.zip
 
       # - name: Deploy to Cloud Function
       #   run: gcloud functions deploy ingestion --source=gs://ingestion-engine-code/engine.zip 
