@@ -6,14 +6,18 @@ from flask import Flask, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
+import whisper
+import torch
+from transformers import pipeline
 
 app = Flask(__name__)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Add your YouTube Data API key here
-YOUTUBE_API_KEY = 'AIzaSyBq-xfGtyUbbV1UjLVAf18FuYc4iJ_g2-M'
+# Add your YouTube Data API key here (should be stored as an environment variable for security)
+YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', 'AIzaSyBq-xfGtyUbbV1UjLVAf18FuYc4iJ_g2-M')
 
 # Specify the channel IDs
 CHANNEL_IDS = {
@@ -24,6 +28,10 @@ CHANNEL_IDS = {
 
 executor = ThreadPoolExecutor()
 
+# Load Whisper model
+whisper_model = whisper.load_model("large-v2")
+
+@lru_cache(maxsize=128)
 def get_latest_videos(channel_id, max_results=10):
     url = f'https://www.googleapis.com/youtube/v3/search?key={YOUTUBE_API_KEY}&channelId={channel_id}&part=snippet,id&order=date&maxResults={max_results}'
     response = requests.get(url)
@@ -39,11 +47,13 @@ def get_latest_videos(channel_id, max_results=10):
                 videos.append({'id': video_id, 'title': title, 'author': author})
     return videos
 
+@lru_cache(maxsize=128)
 def get_transcription(video_id):
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         cleaned_transcript = ' '.join([item['text'].strip() for item in transcript])
-        return cleaned_transcript, None
+        formatted_transcript = format_transcription(cleaned_transcript)
+        return formatted_transcript, None
     except NoTranscriptFound:
         return None, "No transcript found for this video."
     except TranscriptsDisabled:
@@ -52,6 +62,16 @@ def get_transcription(video_id):
         return None, "The video is unavailable."
     except Exception as e:
         return None, f"An error occurred: {str(e)}"
+
+def format_transcription(text):
+    """Format the transcription text for better readability."""
+    sentences = text.split('. ')
+    formatted_text = '.\n\n'.join(sentence.strip().capitalize() for sentence in sentences if sentence)
+    return formatted_text
+
+def transcribe_with_whisper(audio_path):
+    result = whisper_model.transcribe(audio_path)
+    return result["text"]
 
 @app.route('/')
 def index():
