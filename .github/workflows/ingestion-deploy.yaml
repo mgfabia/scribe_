@@ -1,0 +1,96 @@
+name: Zip and Upload Ingestion Script
+
+on:
+  push:
+    branches:
+      - '*'
+
+
+jobs:
+  zip_and_upload:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: curious
+        run: cat /home/runner/work/scribe_/scribe_/gha-creds-*.json
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: 'latest'
+
+      - name: Configure environment variables
+        run: |
+          echo "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
+          echo "GOOGLE_GHA_CREDS_PATH=/home/runner/work/scribe_/scribe_/gha-creds.json" >> $GITHUB_ENV
+          echo "CLOUDSDK_CORE_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+          echo "CLOUDSDK_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+          echo "GCLOUD_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+          echo "GCP_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+          echo "GOOGLE_CLOUD_PROJECT=the-scribe-429016" >> $GITHUB_ENV
+          echo "CLOUDSDK_METRICS_ENVIRONMENT=github-actions-setup-gcloud" >> $GITHUB_ENV
+          echo "CLOUDSDK_METRICS_ENVIRONMENT_VERSION=1.1.1" >> $GITHUB_ENV
+
+      - name: Decode and Save GCP credentials
+        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > /home/runner/work/scribe_/scribe_/gha-creds.json
+
+      - name: Verify Project and Credentials
+        run: |
+          gcloud config set project the-scribe-429016
+          gcloud auth activate-service-account --key-file=/home/runner/work/scribe_/scribe_/gha-creds.json
+          gcloud auth list
+
+      - name: List all storage containers (buckets)
+        run: |
+          gcloud storage buckets list
+
+
+      # - name: 'Authenticate to GCP'
+      #   uses: 'google-github-actions/auth@v0.4.0'
+      #   with:
+            
+      #       workload_identity_provider: 'projects/113330691559/locations/global/workloadIdentityPools/github-actions/providers/github-provider'
+           
+           
+    
+
+      # - name: zip function
+      #   run: |
+      #     cd engine
+      #     zip engine.zip engine.py
+
+      # - name: Upload to cloud
+      #   run: gsutil cp engine.zip gs://ingestion-engine-code/engine.zip
+
+      # - name: Deploy to Cloud Function
+      #   run: gcloud functions deploy ingestion --source=gs://ingestion-engine-code/engine.zip 
+
+      # - name: Zip Cloud Function
+      #   run: |
+      #     # Replace with your actual build steps to create the Cloud Function
+      #     # For example, if your function is in a folder named 'my-function':
+      #     zip -r function.zip my-function
+
+      # - name: Upload to GCS bucket
+      #   uses: google-github-actions/upload-cloud-storage@v2
+      #   with:
+      #     path: function.zip
+      #     destination: your-bucket-name
+
+      # - name: Set output variable
+      #   id: uploaded_files
+      #   run: echo "::set-output name=uploaded::$GITHUB_WORKSPACE/function.zip"
+
+      # - name: Use the uploaded file path
+      #   run: echo "The file was uploaded to gs://your-bucket-name/function.zip"
