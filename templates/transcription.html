@@ -20,7 +20,7 @@
             background-color: #ffffff;
             color: #333;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: fixed;
@@ -35,12 +35,59 @@
             text-align: center;
             border: 2px solid black;
             padding: 10px;
+            flex-grow: 1;
         }
 
         .dark-mode-toggle {
-            margin-right: 20px;
+            position: absolute;
+            right: 50px; /* Adjusted to keep within the page bounds */
             display: flex;
             align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(14px);
         }
 
         .container {
@@ -82,24 +129,23 @@
         }
 
         .dark-mode {
-            background-color: #333;
-            color: white;
+            background-color: #121212; /* Changed to a darker background */
+            color: #e0e0e0; /* Changed to a lighter color for text */
         }
 
-        .dark-mode header,
-        .dark-mode .tab-menu hr {
-            background-color: #000;
-            color: white;
+        .dark-mode header {
+            background-color: #333; /* Darker header */
+            color: #e0e0e0;
         }
 
         .dark-mode .transcription-container {
-            background-color: #444;
-            color: white;
+            background-color: #1e1e1e; /* Darker container */
+            color: #e0e0e0;
         }
 
         .dark-mode .video-title,
         .dark-mode .video-author {
-            color: white;
+            color: #e0e0e0;
         }
 
         .read-more {
@@ -157,8 +203,10 @@
         </a>
         <h1>The Scribe</h1>
         <div class="dark-mode-toggle">
-            <label for="dark-mode-switch">Dark Mode</label>
-            <input type="checkbox" id="dark-mode-switch">
+            <label class="switch">
+                <input type="checkbox" id="dark-mode-switch">
+                <span class="slider"></span>
+            </label>
         </div>
     </header>
     <div class="container">
