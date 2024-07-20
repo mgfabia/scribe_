@@ -1,22 +1,18 @@
 import os
 import requests
 import logging
-import random
+import random  # Importing random module
 from flask import Flask, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 from concurrent.futures import ThreadPoolExecutor
-from functools import lru_cache
-import whisper
-import torch
-from transformers import pipeline
 
 app = Flask(__name__)
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 
-# Add your YouTube Data API key here (should be stored as an environment variable for security)
+# Add your YouTube Data API key here
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', 'AIzaSyBq-xfGtyUbbV1UjLVAf18FuYc4iJ_g2-M')
 
 # Specify the channel IDs
@@ -28,10 +24,6 @@ CHANNEL_IDS = {
 
 executor = ThreadPoolExecutor()
 
-# Load Whisper model
-whisper_model = whisper.load_model("large-v2")
-
-@lru_cache(maxsize=128)
 def get_latest_videos(channel_id, max_results=10):
     url = f'https://www.googleapis.com/youtube/v3/search?key={YOUTUBE_API_KEY}&channelId={channel_id}&part=snippet,id&order=date&maxResults={max_results}'
     response = requests.get(url)
@@ -47,31 +39,48 @@ def get_latest_videos(channel_id, max_results=10):
                 videos.append({'id': video_id, 'title': title, 'author': author})
     return videos
 
-@lru_cache(maxsize=128)
 def get_transcription(video_id):
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        cleaned_transcript = ' '.join([item['text'].strip() for item in transcript])
-        formatted_transcript = format_transcription(cleaned_transcript)
+        formatted_transcript = format_transcription(transcript)
         return formatted_transcript, None
     except NoTranscriptFound:
+        logging.error(f"No transcript found for video ID {video_id}")
         return None, "No transcript found for this video."
     except TranscriptsDisabled:
+        logging.error(f"Transcripts are disabled for video ID {video_id}")
         return None, "Transcripts are disabled for this video."
     except VideoUnavailable:
+        logging.error(f"The video is unavailable for video ID {video_id}")
         return None, "The video is unavailable."
     except Exception as e:
+        logging.error(f"An error occurred for video ID {video_id}: {str(e)}")
         return None, f"An error occurred: {str(e)}"
 
-def format_transcription(text):
-    """Format the transcription text for better readability."""
-    sentences = text.split('. ')
-    formatted_text = '.\n\n'.join(sentence.strip().capitalize() for sentence in sentences if sentence)
-    return formatted_text
+def format_transcription(transcript):
+    """Format the transcription text for better readability and speaker identification."""
+    formatted_transcript = ""
+    speaker_count = 1
+    last_end_time = 0
 
-def transcribe_with_whisper(audio_path):
-    result = whisper_model.transcribe(audio_path)
-    return result["text"]
+    for item in transcript:
+        start_time = item['start']
+        text = item['text']
+
+        # Identify new speakers based on a gap in the timestamps
+        if start_time - last_end_time > 5:  # 5-second gap considered as a new speaker
+            speaker = f"Speaker {speaker_count}:"
+            speaker_count += 1
+        else:
+            speaker = ""
+
+        # Append speaker and text to the formatted transcript
+        formatted_transcript += f"{speaker} {text}\n\n"
+
+        # Update last end time
+        last_end_time = start_time + item['duration']
+
+    return formatted_transcript.strip()
 
 @app.route('/')
 def index():
