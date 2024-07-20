@@ -40,7 +40,7 @@
 
         .dark-mode-toggle {
             position: absolute;
-            right: 50px; /* Adjusted from 100px to 50px */
+            right: 50px; /* Adjusted for better visibility */
             display: flex;
             align-items: center;
         }
@@ -162,27 +162,24 @@
         }
 
         .dark-mode {
-            background-color: #121212; /* Changed to a darker background */
-            color: #e0e0e0; /* Changed to a lighter color for text */
+            background-color: #333;
+            color: white;
         }
 
-        .dark-mode header {
-            background-color: #333; /* Darker header */
-            color: #e0e0e0;
-        }
-
-        .dark-mode .tab-menu div {
-            color: #e0e0e0;
+        .dark-mode header,
+        .dark-mode .tab-menu hr {
+            background-color: #000;
+            color: white;
         }
 
         .dark-mode .transcription-container {
-            background-color: #1e1e1e; /* Darker container */
-            color: #e0e0e0;
+            background-color: #444;
+            color: white;
         }
 
         .dark-mode .video-title,
         .dark-mode .video-author {
-            color: #e0e0e0;
+            color: white;
         }
 
         .read-more {
@@ -216,6 +213,47 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .search-container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .search-container input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 4px 0 0 4px;
+            font-size: 1rem;
+        }
+
+        .search-container button {
+            padding: 10px 20px;
+            border: 2px solid #007bff;
+            background-color: #007bff;
+            color: white;
+            font-size: 1rem;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+
+        .search-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .search-results {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+        }
     </style>
 </head>
 <body>
@@ -234,6 +272,11 @@
             <div onclick="loadCategory('Business')">Business</div>
             <div onclick="loadCategory('Real Estate')">Real Estate</div>
         </div>
+        <div class="search-container">
+            <input type="text" id="youtube-url" placeholder="Enter YouTube URL">
+            <button onclick="fetchTranscription()">Get Transcription</button>
+        </div>
+        <div class="search-results" id="search-results"></div>
         <hr>
         <div class="transcription-container" id="transcription-container">
             <!-- Transcription items will be appended here by JavaScript -->
@@ -331,6 +374,56 @@
                 .catch(error => {
                     document.getElementById('loader').style.display = 'none';
                     console.error('Error fetching transcriptions:', error);
+                });
+        }
+
+        function fetchTranscription() {
+            const url = document.getElementById('youtube-url').value;
+            if (!url) {
+                alert('Please enter a YouTube URL.');
+                return;
+            }
+            const videoId = url.split('v=')[1]?.split('&')[0];
+            if (!videoId) {
+                alert('Invalid YouTube URL.');
+                return;
+            }
+            document.getElementById('loader').style.display = 'block';
+            fetch(`/api/transcription/${videoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loader').style.display = 'none';
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    const container = document.getElementById('search-results');
+                    container.innerHTML = ''; // Clear the container first
+                    container.style.display = 'block'; // Show the search results container
+
+                    const div = document.createElement('div');
+                    div.className = 'transcription-item';
+
+                    const title = document.createElement('div');
+                    title.className = 'video-title';
+                    title.textContent = data.title;
+
+                    const author = document.createElement('div');
+                    author.className = 'video-author';
+                    author.textContent = data.author;
+
+                    const transcription = document.createElement('div');
+                    transcription.className = 'transcription';
+                    transcription.textContent = data.transcription;
+
+                    div.appendChild(title);
+                    div.appendChild(author);
+                    div.appendChild(transcription);
+                    container.appendChild(div);
+                })
+                .catch(error => {
+                    document.getElementById('loader').style.display = 'none';
+                    console.error('Error fetching transcription:', error);
                 });
         }
 

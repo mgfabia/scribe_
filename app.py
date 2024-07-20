@@ -1,7 +1,7 @@
 import os
 import requests
 import logging
-import random  # Importing random module
+import random  # Add this import statement
 from flask import Flask, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
@@ -58,28 +58,9 @@ def get_transcription(video_id):
         return None, f"An error occurred: {str(e)}"
 
 def format_transcription(transcript):
-    """Format the transcription text for better readability and speaker identification."""
     formatted_transcript = ""
-    speaker_count = 1
-    last_end_time = 0
-
     for item in transcript:
-        start_time = item['start']
-        text = item['text']
-
-        # Identify new speakers based on a gap in the timestamps
-        if start_time - last_end_time > 5:  # 5-second gap considered as a new speaker
-            speaker = f"Speaker {speaker_count}:"
-            speaker_count += 1
-        else:
-            speaker = ""
-
-        # Append speaker and text to the formatted transcript
-        formatted_transcript += f"{speaker} {text}\n\n"
-
-        # Update last end time
-        last_end_time = start_time + item['duration']
-
+        formatted_transcript += item['text'] + " "
     return formatted_transcript.strip()
 
 @app.route('/')
@@ -179,6 +160,30 @@ def full_transcription(video_id):
     else:
         full_transcription_text = transcription
     return render_template('transcription.html', title=title, author=author, transcription=full_transcription_text)
+
+@app.route('/api/transcription/<video_id>', methods=['GET'])
+def api_transcription(video_id):
+    transcription, error = get_transcription(video_id)
+    if error:
+        return jsonify({'error': error})
+    video_details = get_video_details(video_id)
+    return jsonify({
+        'title': video_details['title'],
+        'author': video_details['author'],
+        'transcription': transcription
+    })
+
+def get_video_details(video_id):
+    url = f'https://www.googleapis.com/youtube/v3/videos?part=snippet&id={video_id}&key={YOUTUBE_API_KEY}'
+    response = requests.get(url)
+    data = response.json()
+    if 'items' in data and len(data['items']) > 0:
+        item = data['items'][0]
+        return {
+            'title': item['snippet']['title'],
+            'author': item['snippet']['channelTitle']
+        }
+    return {'title': 'Unknown Title', 'author': 'Unknown Author'}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
