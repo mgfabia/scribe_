@@ -1,7 +1,10 @@
 import os
 import requests
 import logging
-import random  # Add this import statement
+import random
+import re
+import nltk
+from nltk.tokenize import sent_tokenize
 from flask import Flask, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
@@ -59,8 +62,35 @@ def get_transcription(video_id):
 
 def format_transcription(transcript):
     formatted_transcript = ""
+    current_chunk = ""
+    current_chunk_start = 0
+    filler_words = set(["um", "uh", "like", "you know", "sort of", "kind of"])
+
     for item in transcript:
-        formatted_transcript += item['text'] + " "
+        start_time = item['start']
+        text = item['text']
+        
+        # Remove filler words
+        for word in filler_words:
+            text = re.sub(r'\b' + word + r'\b', '', text, flags=re.IGNORECASE)
+        
+        # If we're starting a new 5-minute chunk
+        if int(start_time) // 300 > current_chunk_start // 300:
+            if current_chunk:
+                sentences = sent_tokenize(current_chunk)
+                formatted_chunk = "\n".join(sentence.capitalize() for sentence in sentences)
+                formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n{formatted_chunk}\n\n"
+            current_chunk = text
+            current_chunk_start = int(start_time)
+        else:
+            current_chunk += " " + text
+
+    # Add any remaining text
+    if current_chunk:
+        sentences = sent_tokenize(current_chunk)
+        formatted_chunk = "\n".join(sentence.capitalize() for sentence in sentences)
+        formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n{formatted_chunk}\n"
+
     return formatted_transcript.strip()
 
 @app.route('/')
@@ -78,7 +108,11 @@ def api_transcriptions():
         if error:
             transcription_text = f"Error: {error}"
         else:
-            transcription_text = ' '.join(transcription.split()[:140]) + '...'  # First 140 words
+            # Split the transcription into chunks and take the first chunk
+            chunks = transcription.split('\n\n')
+            first_chunk = chunks[0] if chunks else ""
+            transcription_text = first_chunk
+
         transcriptions.append({
             'id': video['id'],
             'title': video['title'] or 'Title not found',
@@ -160,30 +194,6 @@ def full_transcription(video_id):
     else:
         full_transcription_text = transcription
     return render_template('transcription.html', title=title, author=author, transcription=full_transcription_text)
-
-@app.route('/api/transcription/<video_id>', methods=['GET'])
-def api_transcription(video_id):
-    transcription, error = get_transcription(video_id)
-    if error:
-        return jsonify({'error': error})
-    video_details = get_video_details(video_id)
-    return jsonify({
-        'title': video_details['title'],
-        'author': video_details['author'],
-        'transcription': transcription
-    })
-
-def get_video_details(video_id):
-    url = f'https://www.googleapis.com/youtube/v3/videos?part=snippet&id={video_id}&key={YOUTUBE_API_KEY}'
-    response = requests.get(url)
-    data = response.json()
-    if 'items' in data and len(data['items']) > 0:
-        item = data['items'][0]
-        return {
-            'title': item['snippet']['title'],
-            'author': item['snippet']['channelTitle']
-        }
-    return {'title': 'Unknown Title', 'author': 'Unknown Author'}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
