@@ -106,3 +106,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+function loadTranscriptions() {
+    fetch('/api/transcriptions')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('transcription-container');
+            container.innerHTML = ''; // Clear existing content
+
+            data.transcriptions.forEach(item => {
+                const transcriptionItem = document.createElement('div');
+                transcriptionItem.className = 'transcription-item';
+                transcriptionItem.innerHTML = `
+                    <h2 class="video-title">${item.title}</h2>
+                    <p class="video-author">${item.author}</p>
+                    <pre class="transcription">${item.transcription}</pre>
+                    <a href="/transcription/${item.id}" class="read-more">Read More</a>
+                `;
+                container.appendChild(transcriptionItem);
+            });
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Call this function when the page loads
+document.addEventListener('DOMContentLoaded', loadTranscriptions);

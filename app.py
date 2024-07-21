@@ -9,6 +9,7 @@ from flask import Flask, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 from concurrent.futures import ThreadPoolExecutor
+from typing import Union, List, Dict
 
 app = Flask(__name__)
 
@@ -45,8 +46,7 @@ def get_latest_videos(channel_id, max_results=10):
 def get_transcription(video_id):
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        formatted_transcript = format_transcription(transcript)
-        return formatted_transcript, None
+        return transcript, None
     except NoTranscriptFound:
         logging.error(f"No transcript found for video ID {video_id}")
         return None, "No transcript found for this video."
@@ -60,26 +60,41 @@ def get_transcription(video_id):
         logging.error(f"An error occurred for video ID {video_id}: {str(e)}")
         return None, f"An error occurred: {str(e)}"
 
+nltk.download('punkt')
+
 def format_transcription(transcript):
+    if isinstance(transcript, str):
+        # If it's already a string, just process it as is
+        return process_chunk(transcript)
+    
     formatted_transcript = ""
     current_chunk = ""
     current_chunk_start = 0
     filler_words = set(["um", "uh", "like", "you know", "sort of", "kind of"])
 
     for item in transcript:
-        start_time = item['start']
-        text = item['text']
-        
+        if isinstance(item, dict):
+            start_time = item.get('start', 0)
+            text = item.get('text', '')
+        elif isinstance(item, str):
+            start_time = current_chunk_start
+            text = item
+        else:
+            continue  # Skip if it's neither a dict nor a string
+
         # Remove filler words
         for word in filler_words:
             text = re.sub(r'\b' + word + r'\b', '', text, flags=re.IGNORECASE)
         
+        # Clean up extra spaces
+        text = re.sub(r'\s+', ' ', text).strip()
+        
         # If we're starting a new 5-minute chunk
         if int(start_time) // 300 > current_chunk_start // 300:
             if current_chunk:
-                sentences = sent_tokenize(current_chunk)
-                formatted_chunk = "\n".join(sentence.capitalize() for sentence in sentences)
-                formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n{formatted_chunk}\n\n"
+                formatted_chunk = process_chunk(current_chunk)
+                formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n\n{formatted_chunk}\n\n"
+                formatted_transcript += "------------------------------\n\n"  # Add a line between segments
             current_chunk = text
             current_chunk_start = int(start_time)
         else:
@@ -87,11 +102,37 @@ def format_transcription(transcript):
 
     # Add any remaining text
     if current_chunk:
-        sentences = sent_tokenize(current_chunk)
-        formatted_chunk = "\n".join(sentence.capitalize() for sentence in sentences)
-        formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n{formatted_chunk}\n"
+        formatted_chunk = process_chunk(current_chunk)
+        formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n\n{formatted_chunk}\n"
 
     return formatted_transcript.strip()
+
+def process_chunk(chunk):
+    # Capitalize first letter of sentences
+    sentences = sent_tokenize(chunk)
+    sentences = [s.capitalize() for s in sentences]
+    
+    # Join sentences, ensuring proper spacing
+    processed_chunk = ' '.join(sentences)
+    
+    # Fix common transcription errors
+    processed_chunk = re.sub(r'\bi\b', 'I', processed_chunk)
+    processed_chunk = re.sub(r'\bim\b', "I'm", processed_chunk)
+    processed_chunk = re.sub(r'\bdont\b', "don't", processed_chunk)
+    processed_chunk = re.sub(r'\bwont\b', "won't", processed_chunk)
+    processed_chunk = re.sub(r'\bcant\b', "can't", processed_chunk)
+    
+    # Add periods to the end of sentences if missing
+    processed_chunk = re.sub(r'(?<=[a-z])\s+(?=[A-Z])', '. ', processed_chunk)
+    
+        # Split into paragraphs (e.g., every 3-5 sentences)
+    sentences = sent_tokenize(processed_chunk)
+    paragraphs = []
+    for i in range(0, len(sentences), 4):  # Change 4 to adjust paragraph size
+        paragraph = ' '.join(sentences[i:i+4])
+        paragraphs.append(paragraph)
+    
+    return '\n\n'.join(paragraphs)
 
 @app.route('/')
 def index():
@@ -100,7 +141,6 @@ def index():
 @app.route('/api/transcriptions')
 def api_transcriptions():
     transcriptions = []
-    additional_videos = []
 
     def fetch_transcription(video):
         transcription, error = get_transcription(video['id'])
@@ -108,10 +148,17 @@ def api_transcriptions():
         if error:
             transcription_text = f"Error: {error}"
         else:
-            # Split the transcription into chunks and take the first chunk
-            chunks = transcription.split('\n\n')
-            first_chunk = chunks[0] if chunks else ""
-            transcription_text = first_chunk
+            try:
+                # Format the raw transcription
+                formatted_transcription = format_transcription(transcription)
+            
+                # Take the first chunk (first 5 minutes) for preview
+                chunks = formatted_transcription.split("------------------------------")
+                first_chunk = chunks[0].strip() if chunks else ""
+                transcription_text = first_chunk
+            except Exception as e:
+                logging.error(f"Error formatting transcription: {str(e)}")
+                transcription_text = "Error processing transcription"
 
         transcriptions.append({
             'id': video['id'],
@@ -124,28 +171,10 @@ def api_transcriptions():
     for category, channels in CHANNEL_IDS.items():
         for channel_id in channels:
             latest_videos = get_latest_videos(channel_id, max_results=1)
-            logging.debug(f'Latest video for channel {channel_id}: {latest_videos}')
             for video in latest_videos:
-                executor.submit(fetch_transcription, video)
+                fetch_transcription(video)
 
-    # Fetch additional videos from each channel
-    for category, channels in CHANNEL_IDS.items():
-        for channel_id in channels:
-            latest_videos = get_latest_videos(channel_id, max_results=10)
-            logging.debug(f'Additional videos for channel {channel_id}: {latest_videos[1:]}')
-            for video in latest_videos[1:]:  # Skip the first video as it is already added
-                additional_videos.append(video)
-
-    # Log the additional videos to ensure they are fetched correctly
-    logging.debug(f'Additional videos: {additional_videos}')
-
-    # Randomly select 5 additional videos
-    random.shuffle(additional_videos)
-    additional_videos = additional_videos[:5]
-
-    # Add the additional videos to the transcriptions list
-    for video in additional_videos:
-        executor.submit(fetch_transcription, video)
+    # ... (rest of the function remains the same)
 
     return jsonify({'transcriptions': transcriptions})
 

@@ -158,3 +158,8 @@ h1 {
         grid-template-columns: 1fr;
     }
 }
+
+.transcription {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
