@@ -1,18 +1,14 @@
 import os
 import requests
 import logging
-import random
 import re
 import nltk
-import asyncio
-import aiohttp
 from functools import lru_cache
 from nltk.tokenize import sent_tokenize
 from flask import Flask, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Union, List, Dict
 
 app = Flask(__name__)
 
@@ -66,9 +62,6 @@ def get_transcription(video_id):
 nltk.download('punkt', quiet=True)
 
 def format_transcription(transcript):
-    if isinstance(transcript, str):
-        return process_chunk(transcript)
-    
     formatted_transcript = ""
     current_chunk = ""
     current_chunk_start = 0
@@ -81,7 +74,7 @@ def format_transcription(transcript):
         if int(start_time) // 300 > current_chunk_start // 300:
             if current_chunk:
                 formatted_chunk = process_chunk(current_chunk)
-                formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n\n{formatted_chunk}\n\n"
+                formatted_transcript += f"{formatted_chunk}\n\n"
                 formatted_transcript += "------------------------------\n\n"
             current_chunk = text
             current_chunk_start = int(start_time)
@@ -91,7 +84,7 @@ def format_transcription(transcript):
     # Add any remaining text
     if current_chunk:
         formatted_chunk = process_chunk(current_chunk)
-        formatted_transcript += f"--- {current_chunk_start // 60:02d}:00 to {(current_chunk_start // 60) + 5:02d}:00 ---\n\n{formatted_chunk}\n"
+        formatted_transcript += f"{formatted_chunk}\n"
 
     return formatted_transcript.strip()
 
@@ -121,11 +114,11 @@ def process_chunk(chunk):
     # Add periods to the end of sentences if missing
     processed_chunk = re.sub(r'(?<=[a-z])\s+(?=[A-Z])', '. ', processed_chunk)
     
-    # Split into paragraphs (e.g., every 3-5 sentences)
+    # Split into paragraphs (every 7 sentences)
     sentences = sent_tokenize(processed_chunk)
     paragraphs = []
-    for i in range(0, len(sentences), 4):  # Change 4 to adjust paragraph size
-        paragraph = ' '.join(sentences[i:i+4])
+    for i in range(0, len(sentences), 7):
+        paragraph = ' '.join(sentences[i:i+7])
         paragraphs.append(paragraph)
     
     return '\n\n'.join(paragraphs)
@@ -133,32 +126,6 @@ def process_chunk(chunk):
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# Cache for transcriptions
-@lru_cache(maxsize=100)
-def get_cached_transcription(video_id):
-    return get_transcription(video_id)
-
-async def fetch_transcription(session, video):
-    transcription, error = await get_cached_transcription(video['id'])
-    if error:
-        transcription_text = f"Error: {error}"
-    else:
-        try:
-            formatted_transcription = format_transcription(transcription)
-            chunks = formatted_transcription.split("------------------------------")
-            first_chunk = chunks[0].strip() if chunks else ""
-            transcription_text = first_chunk
-        except Exception as e:
-            logging.error(f"Error formatting transcription: {str(e)}")
-            transcription_text = "Error processing transcription"
-
-    return {
-        'id': video['id'],
-        'title': video['title'] or 'Title not found',
-        'author': video['author'] or 'Author not found',
-        'transcription': transcription_text
-    }
 
 @app.route('/api/transcriptions')
 def api_transcriptions():
@@ -240,7 +207,7 @@ def full_transcription(video_id):
     if error:
         full_transcription_text = f"Error: {error}"
     else:
-        full_transcription_text = transcription
+        full_transcription_text = format_transcription(transcription)
     return render_template('transcription.html', title=title, author=author, transcription=full_transcription_text)
 
 if __name__ == '__main__':
