@@ -3,6 +3,8 @@ import requests
 import logging
 import re
 import nltk
+import torch
+from transformers import BertTokenizer, BertForMaskedLM
 from functools import lru_cache
 from nltk.tokenize import sent_tokenize
 from flask import Flask, render_template, jsonify
@@ -11,6 +13,12 @@ from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisable
 from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
+
+# Initialize BERT model and tokenizer
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = BertForMaskedLM.from_pretrained('bert-base-uncased').to(device)
+model.eval()  # Set the model to evaluation mode
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
@@ -26,6 +34,20 @@ CHANNEL_IDS = {
 }
 
 executor = ThreadPoolExecutor(max_workers=10)
+
+nltk.download('punkt', quiet=True)
+
+@lru_cache(maxsize=1000)
+def improve_text_with_bert(text):
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512).to(device)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    predictions = outputs.logits.argmax(dim=-1)
+    improved_tokens = tokenizer.convert_ids_to_tokens(predictions.squeeze().tolist())
+    improved_text = tokenizer.convert_tokens_to_string(improved_tokens)
+    
+    return improved_text
 
 def get_latest_videos(channel_id, max_results=10):
     url = f'https://www.googleapis.com/youtube/v3/search?key={YOUTUBE_API_KEY}&channelId={channel_id}&part=snippet,id&order=date&maxResults={max_results}'
@@ -59,69 +81,72 @@ def get_transcription(video_id):
         logging.error(f"An error occurred for video ID {video_id}: {str(e)}")
         return None, f"An error occurred: {str(e)}"
 
-nltk.download('punkt', quiet=True)
-
-def format_transcription(transcript):
-    formatted_transcript = ""
-    current_chunk = ""
-    current_chunk_start = 0
-    
-    for item in transcript:
-        start_time = item.get('start', 0)
-        text = item.get('text', '')
-        
-        # If we're starting a new 5-minute chunk
-        if int(start_time) // 300 > current_chunk_start // 300:
-            if current_chunk:
-                formatted_chunk = process_chunk(current_chunk)
-                formatted_transcript += f"{formatted_chunk}\n\n"
-                formatted_transcript += "------------------------------\n\n"
-            current_chunk = text
-            current_chunk_start = int(start_time)
-        else:
-            current_chunk += " " + text
-
-    # Add any remaining text
-    if current_chunk:
-        formatted_chunk = process_chunk(current_chunk)
-        formatted_transcript += f"{formatted_chunk}\n"
-
-    return formatted_transcript.strip()
-
-def process_chunk(chunk):
+def clean_text(text):
     # Remove filler words
     filler_words = ["um", "uh", "like", "you know", "sort of", "kind of"]
     for word in filler_words:
-        chunk = re.sub(r'\b' + word + r'\b', '', chunk, flags=re.IGNORECASE)
+        text = re.sub(r'\b' + word + r'\b', '', text, flags=re.IGNORECASE)
     
     # Clean up extra spaces
-    chunk = re.sub(r'\s+', ' ', chunk).strip()
-    
-    # Capitalize first letter of sentences
-    sentences = sent_tokenize(chunk)
-    sentences = [s.capitalize() for s in sentences]
-    
-    # Join sentences, ensuring proper spacing
-    processed_chunk = ' '.join(sentences)
+    text = re.sub(r'\s+', ' ', text).strip()
     
     # Fix common transcription errors
-    processed_chunk = re.sub(r'\bi\b', 'I', processed_chunk)
-    processed_chunk = re.sub(r'\bim\b', "I'm", processed_chunk)
-    processed_chunk = re.sub(r'\bdont\b', "don't", processed_chunk)
-    processed_chunk = re.sub(r'\bwont\b', "won't", processed_chunk)
-    processed_chunk = re.sub(r'\bcant\b', "can't", processed_chunk)
+    text = re.sub(r'\bi\b', 'I', text)
+    text = re.sub(r'\bim\b', "I'm", text)
+    text = re.sub(r'\bdont\b', "don't", text)
+    text = re.sub(r'\bwont\b', "won't", text)
+    text = re.sub(r'\bcant\b', "can't", text)
     
-    # Add periods to the end of sentences if missing
-    processed_chunk = re.sub(r'(?<=[a-z])\s+(?=[A-Z])', '. ', processed_chunk)
+    return text
+
+def format_transcription(transcription):
+    if isinstance(transcription, list):
+        full_text = ' '.join(item['text'] for item in transcription)
+    else:
+        full_text = transcription
     
-    # Split into paragraphs (every 7 sentences)
-    sentences = sent_tokenize(processed_chunk)
-    paragraphs = []
-    for i in range(0, len(sentences), 7):
-        paragraph = ' '.join(sentences[i:i+7])
-        paragraphs.append(paragraph)
+    # Clean the text
+    cleaned_text = clean_text(full_text)
     
-    return '\n\n'.join(paragraphs)
+    # Improve text with BERT
+    improved_text = improve_text_with_bert(cleaned_text)
+    
+    # Split text into sentences
+    sentences = sent_tokenize(improved_text)
+    
+    formatted_paragraphs = []
+    current_paragraph = []
+    
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if sentence:
+            current_paragraph.append(sentence)
+            if len(current_paragraph) >= 3:
+                formatted_paragraphs.append(' '.join(current_paragraph))
+                current_paragraph = []
+    
+    if current_paragraph:
+        formatted_paragraphs.append(' '.join(current_paragraph))
+    
+    return '\n\n'.join(formatted_paragraphs)
+
+def fetch_transcription(video):
+    try:
+        transcription, error = get_transcription(video['id'])
+        if error:
+            transcription_text = f"Error: {error}"
+        else:
+            transcription_text = format_transcription(transcription)
+    except Exception as e:
+        logging.error(f"Error processing transcription for video {video['id']}: {str(e)}")
+        transcription_text = f"Error processing transcription: {str(e)}"
+
+    return {
+        'id': video['id'],
+        'title': video.get('title', 'Title not found'),
+        'author': video.get('author', 'Author not found'),
+        'transcription': transcription_text
+    }
 
 @app.route('/')
 def index():
@@ -130,28 +155,6 @@ def index():
 @app.route('/api/transcriptions')
 def api_transcriptions():
     transcriptions = []
-
-    def fetch_transcription(video):
-        transcription, error = get_transcription(video['id'])
-        if error:
-            transcription_text = f"Error: {error}"
-        else:
-            try:
-                formatted_transcription = format_transcription(transcription)
-                chunks = formatted_transcription.split("------------------------------")
-                first_chunk = chunks[0].strip() if chunks else ""
-                transcription_text = first_chunk
-            except Exception as e:
-                logging.error(f"Error formatting transcription: {str(e)}")
-                transcription_text = "Error processing transcription"
-
-        return {
-            'id': video['id'],
-            'title': video['title'] or 'Title not found',
-            'author': video['author'] or 'Author not found',
-            'transcription': transcription_text
-        }
-
     futures = []
     for category, channels in CHANNEL_IDS.items():
         for channel_id in channels:
@@ -170,26 +173,18 @@ def api_category(category):
         return jsonify({'error': 'Invalid category'}), 400
 
     transcriptions = []
-
-    def fetch_transcription(video):
-        transcription, error = get_transcription(video['id'])
-        logging.debug(f'Title: {video["title"]}, Author: {video["author"]}')
-        if error:
-            transcription_text = f"Error: {error}"
-        else:
-            transcription_text = ' '.join(transcription.split()[:140]) + '...'  # First 140 words
-        transcriptions.append({
-            'id': video['id'],
-            'title': video['title'] or 'Title not found',
-            'author': video['author'] or 'Author not found',
-            'transcription': transcription_text
-        })
+    futures = []
 
     for channel_id in CHANNEL_IDS[category]:
         latest_videos = get_latest_videos(channel_id, max_results=3)
         logging.debug(f'Latest videos for category {category}, channel {channel_id}: {latest_videos}')
         for video in latest_videos:
-            executor.submit(fetch_transcription, video)
+            futures.append(executor.submit(fetch_transcription, video))
+
+    for future in futures:
+        result = future.result()
+        result['transcription'] = ' '.join(result['transcription'].split()[:140]) + '...'  # First 140 words
+        transcriptions.append(result)
 
     return jsonify({'transcriptions': transcriptions})
 
