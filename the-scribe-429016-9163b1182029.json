@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "the-scribe-429016",
+  "private_key_id": "9163b118202988e35933ad9f289b3d035572f2e6",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCoK6I2+nc1GMV3\nzFwbXkiBuBKOAMyg0qG9VExjeaFCWRjPEibFN0Y7U98su7JhHIPBKFLdQMrw4M7W\nvCxOU22cZ5TR+ikijKKUgX9VFut50XBKmRP2JvUuh2wN6ZSplGKTLsE1PgW4LpbY\nrzNGQPuewe1DUAdf57PD5QQe8iymKkolSRcyxfu3v1qwGbXrXKZWr9/AuoQB+Y37\n1SGd25ILWpTcVjn/MGosxBxUr4ciBbQOwqBcQbzFnVwW/K31PRaWCx+ZwIGytdoT\nIVdv9YCS63i3mokZH+0ApwPteSlUajoQ8ifP5wqr2H9fX6QZZRHNTfUbOsekT3W9\nLaTRUd6rAgMBAAECggEAOyuXGMcJuHntyNfztIF4+4Nbq/EmDpPt6qLFed6q2aBl\ntT4KvCtVn7xD8wZbngWdahIZDdYlUZmXzUBKSojaMUTUvQjK/mgDMENcHQFCewsw\n+l5gAqT0cZmecEq2TvBxup2hx2z6MDLcSoNihB6LKfHL3HpFDf6FZrCmwYiuIwx9\nG6HjtSPsnz5l01EU+UBER5bStariMGfpXhbb04wwnA3myiCLBBhQtbvxf+4dowh6\nXMx9oawz9Al+2u3lkQaZ6QBQ6A2B+eMKC0BItvGGPsOQop7C9ZCPZ1ka1LV70q2D\nJG8oG+oitpXRLOdwAj+I/CflXneJsvpTWYDyLO4pAQKBgQDpvzjDOfx4GnunRtuR\nk0n6MefzKig9kzjHKLJzFZbq0dA2s4xQA0liM/1goLKT4fnEDdUI0PA/5U4i5yOf\nbb1jgDwCejErdyL2QdZtY4eA+u/F9SAqBlnMLiajqT6ycMYlReK8cBG9kS1M4SNV\n42yRTHqITTgVoZBPS2mW2kOoKwKBgQC4LjW6Cvnr2UUy5eWDB2dJIH6U0l78VcAU\napMiaPXiEtKCkswwNTfbBPhYYuoufRKjghFTCxex9o2EhSLHgs0DqBBOM3BcsI4P\ns0qgQFb7YgHxuljTcL8Iz0xn4nBY7zHBWfvGJ3zx4eu2nt5W6xIlF9jb8T/Jnm3b\npwTFe1TjgQKBgQC5sKZIOSV+yBMZdSnywN6Q+tp4CzKCkBUX6hWxZSJKEznkash5\nu9KtR/3uqFqVLny7qf1mDo39RI3JHnPnMEe25uVFVor/K5rDpNPSfLHl3fNjAHN3\nzynBEZyygT4EhaBzdcxExIbjYJRrMaNflNbnqqjg5O88B+hbhd4w7921lwKBgBXH\nsSbNAXz4doxsT1XNXFNzekSTFBR2933ylG+vRdR0MVyri2XwBSjrT4r0N4lD1R5s\n1Sui1ix/YYDYVaKOPzw9daApyRHM9x+4Lg0BTsfvcRdq1/I5FP4vtXNbfbmmn5Wj\n1Hg8VzQraTpxUw2oQr8MMOLhho+LIqak+5V23jUBAoGAIa9PQva+PqFaGFcMYvcI\nJ8A9sWV3DIGfy90nPQBENEwX75+jhhHWsi0zLipn8cOTdJeNNBQloNbxloBOpf5R\nBOniyWiYzpcMWHpyk8dWugtrpVMhtuiLGFNmvTFknbsFZfvZ8Pi6nfXNj3GpDxWF\ntQGjZ5tsY891FMdIKSCfIWU=\n-----END PRIVATE KEY-----\n",
+  "client_email": "storage-object-viewer@the-scribe-429016.iam.gserviceaccount.com",
+  "client_id": "101840123376624871706",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/storage-object-viewer%40the-scribe-429016.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

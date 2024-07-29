@@ -1,16 +1,22 @@
 import os
-import requests
 import logging
 import re
 import nltk
 import torch
+import io
+import requests
+import sys
+import yt_dlp as youtube_dl
+from google.cloud import speech
+from pytube import YouTube
+from google.cloud import speech_v1p1beta1 as speech
+from google.oauth2 import service_account
 from transformers import BertTokenizer, BertForMaskedLM
 from functools import lru_cache
 from nltk.tokenize import sent_tokenize
 from flask import Flask, render_template, jsonify
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 from concurrent.futures import ThreadPoolExecutor
+from googleapiclient.discovery import build
 
 app = Flask(__name__)
 
@@ -24,7 +30,10 @@ model.eval()  # Set the model to evaluation mode
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 
 # Add your YouTube Data API key here
-YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', 'AIzaSyBq-xfGtyUbbV1UjLVAf18FuYc4iJ_g2-M')
+YOUTUBE_API_KEY = 'AIzaSyAz66SV-TruGZfyss14inB6d0MjuNfWBSY'
+
+# Initialize the YouTube API client
+youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
 # Specify the channel IDs
 CHANNEL_IDS = {
@@ -36,6 +45,10 @@ CHANNEL_IDS = {
 executor = ThreadPoolExecutor(max_workers=10)
 
 nltk.download('punkt', quiet=True)
+
+# Initialize Google Cloud Speech-to-Text client
+credentials = service_account.Credentials.from_service_account_file("C:/Users/Connor Fata/project/scribe/scribe_/the-scribe-429016-9163b1182029.json")
+speech_client = speech.SpeechClient(credentials=credentials)
 
 @lru_cache(maxsize=1000)
 def improve_text_with_bert(text):
@@ -50,13 +63,17 @@ def improve_text_with_bert(text):
     return improved_text
 
 def get_latest_videos(channel_id, max_results=10):
-    url = f'https://www.googleapis.com/youtube/v3/search?key={YOUTUBE_API_KEY}&channelId={channel_id}&part=snippet,id&order=date&maxResults={max_results}'
-    response = requests.get(url)
-    data = response.json()
-    logging.debug(f'Latest videos for channel {channel_id}: {data}')
+    request = youtube.search().list(
+        part="snippet",
+        channelId=channel_id,
+        maxResults=max_results,
+        order="date"
+    )
+    response = request.execute()
+    logging.debug(f'Latest videos for channel {channel_id}: {response}')
     videos = []
-    if 'items' in data:
-        for item in data['items']:
+    if 'items' in response:
+        for item in response['items']:
             video_id = item['id'].get('videoId')
             title = item['snippet']['title']
             author = item['snippet']['channelTitle']
@@ -64,19 +81,74 @@ def get_latest_videos(channel_id, max_results=10):
                 videos.append({'id': video_id, 'title': title, 'author': author})
     return videos
 
+def transcribe_audio(speech_file_uri):
+    audio = speech.RecognitionAudio(uri=speech_file_uri)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code="en-US"
+    )
+    
+    operation = speech_client.long_running_recognize(config=config, audio=audio)
+    response = operation.result(timeout=90)
+    
+    transcript = ""
+    for result in response.results:
+        transcript += result.alternatives[0].transcript + " "
+    
+    return transcript
+
+def transcribe_audio_from_url(audio_url):
+    # Fetch the audio file from the URL
+    response = requests.get(audio_url)
+    audio_content = io.BytesIO(response.content)
+    
+    # Initialize the Google Cloud Speech client
+    client = speech.SpeechClient()
+    
+    # Read the audio content
+    audio = speech.RecognitionAudio(content=audio_content.read())
+    
+    # Configure the recognition parameters
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code="en-US",
+    )
+    
+    # Perform the transcription
+    response = client.recognize(config=config, audio=audio)
+    
+    # Extract and return the transcript
+    transcripts = [result.alternatives[0].transcript for result in response.results]
+    return ' '.join(transcripts)
+
 def get_transcription(video_id):
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        # Extract audio using pytube
+        yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
+        audio_stream = yt.streams.filter(only_audio=True).first()
+        
+        # Download the audio to a buffer
+        buffer = io.BytesIO()
+        audio_stream.stream_to_buffer(buffer)
+        buffer.seek(0)
+
+        # Transcribe the audio
+        audio = speech.RecognitionAudio(content=buffer.read())
+        config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.MP3,
+            sample_rate_hertz=44100,
+            language_code="en-US"
+        )
+        
+        response = speech_client.recognize(config=config, audio=audio)
+        
+        transcript = ""
+        for result in response.results:
+            transcript += result.alternatives[0].transcript + " "
+        
         return transcript, None
-    except NoTranscriptFound:
-        logging.error(f"No transcript found for video ID {video_id}")
-        return None, "No transcript found for this video."
-    except TranscriptsDisabled:
-        logging.error(f"Transcripts are disabled for video ID {video_id}")
-        return None, "Transcripts are disabled for this video."
-    except VideoUnavailable:
-        logging.error(f"The video is unavailable for video ID {video_id}")
-        return None, "The video is unavailable."
     except Exception as e:
         logging.error(f"An error occurred for video ID {video_id}: {str(e)}")
         return None, f"An error occurred: {str(e)}"
@@ -135,6 +207,8 @@ def fetch_transcription(video):
         transcription, error = get_transcription(video['id'])
         if error:
             transcription_text = f"Error: {error}"
+        elif transcription is None:
+            transcription_text = "Transcription failed: No transcript returned"
         else:
             transcription_text = format_transcription(transcription)
     except Exception as e:
@@ -183,7 +257,10 @@ def api_category(category):
 
     for future in futures:
         result = future.result()
-        result['transcription'] = ' '.join(result['transcription'].split()[:140]) + '...'  # First 140 words
+        if isinstance(result['transcription'], str):
+            result['transcription'] = ' '.join(result['transcription'].split()[:140]) + '...'  # First 140 words
+        else:
+            result['transcription'] = 'Error: Unable to process transcription'
         transcriptions.append(result)
 
     return jsonify({'transcriptions': transcriptions})
@@ -201,6 +278,8 @@ def full_transcription(video_id):
                     break
     if error:
         full_transcription_text = f"Error: {error}"
+    elif transcription is None:
+        full_transcription_text = "Transcription failed: No transcript returned"
     else:
         full_transcription_text = format_transcription(transcription)
     return render_template('transcription.html', title=title, author=author, transcription=full_transcription_text)
