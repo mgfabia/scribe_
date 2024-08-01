@@ -3,6 +3,7 @@ import requests
 import logging
 import random
 from flask import Flask, render_template, jsonify
+from alpha_vantage.alphaintelligence import AlphaIntelligence
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 from concurrent.futures import ThreadPoolExecutor
@@ -56,18 +57,33 @@ def get_transcription(video_id):
     except Exception as e:
         return None, f"An error occurred: {str(e)}"
 
-def get_market_news_and_sentiment(tickers='AAPL,MSFT,GOOG'):
+import requests
+
+def get_market_news_and_sentiment():
     url = 'https://www.alphavantage.co/query'
     params = {
         'function': 'NEWS_SENTIMENT',
-        'tickers': tickers,
-        'apikey': ALPHA_VANTAGE_API_KEY
+        'tickers': 'AAPL,MSFT,GOOG',  # Add your desired tickers here
+        'topics': 'earnings,ipo,technology,financial_markets,economy_macro,economy_fiscal',
+        'apikey': 'QJ6Po979I5HXQJVL'
     }
+    
     response = requests.get(url, params=params)
+    
     if response.status_code == 200:
         return response.json(), None
     else:
         return None, f"Error: {response.status_code} - {response.text}"
+
+@app.route('/api/market-news')
+def api_market_news():
+    app.logger.debug("Fetching market news and sentiment data.")
+    news_data, error = get_market_news_and_sentiment()
+    if error:
+        app.logger.error(f"Market news error: {error}")
+        return jsonify({'error': error}), 500
+    app.logger.debug(f"Market news data: {news_data}")
+    return jsonify(news_data)
 
 @app.route('/')
 def index():
@@ -120,16 +136,6 @@ def api_transcriptions():
         executor.submit(fetch_transcription, video)
 
     return jsonify({'transcriptions': transcriptions})
-
-@app.route('/api/market-news')
-def api_market_news():
-    app.logger.debug("Fetching market news and sentiment data.")
-    news_data, error = get_market_news_and_sentiment()
-    if error:
-        app.logger.error(f"Market news error: {error}")
-        return jsonify({'error': error}), 500
-    app.logger.debug(f"Market news data: {news_data}")
-    return jsonify(news_data)
 
 @app.route('/api/category/<category>')
 def api_category(category):

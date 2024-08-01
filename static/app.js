@@ -175,5 +175,10 @@ document.addEventListener('DOMContentLoaded', function () {
     loadMarketNews();
 });
 
+document.addEventListener('DOMContentLoaded', function () {
+    loadTranscriptions();
+    loadMarketNews();
+});
+
 // Call this function when the page loads
 document.addEventListener('DOMContentLoaded', loadTranscriptions);

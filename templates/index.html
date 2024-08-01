@@ -468,9 +468,11 @@
         }
 
         function loadMarketNews() {
+            console.log('Fetching market news...'); // Add logging
             fetch('/api/market-news')
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Market news data:', data); // Add logging
                     const container = document.getElementById('market-news');
                     container.innerHTML = ''; // Clear the container first
                     if (data.feed) {
