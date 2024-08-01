@@ -15,6 +15,9 @@ logging.basicConfig(level=logging.DEBUG)
 # Add your YouTube Data API key here
 YOUTUBE_API_KEY = 'AIzaSyBq-xfGtyUbbV1UjLVAf18FuYc4iJ_g2-M'
 
+# Add your Alpha Vantage API key here
+ALPHA_VANTAGE_API_KEY = 'QJ6Po979I5HXQJVL'
+
 # Specify the channel IDs
 CHANNEL_IDS = {
     'Interviews': ['UCQ-rrUCsJLNjFdPtKq0YOfA'],  # Diary of a CEO
@@ -52,6 +55,19 @@ def get_transcription(video_id):
         return None, "The video is unavailable."
     except Exception as e:
         return None, f"An error occurred: {str(e)}"
+
+def get_market_news_and_sentiment(tickers='AAPL,MSFT,GOOG'):
+    url = 'https://www.alphavantage.co/query'
+    params = {
+        'function': 'NEWS_SENTIMENT',
+        'tickers': tickers,
+        'apikey': ALPHA_VANTAGE_API_KEY
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json(), None
+    else:
+        return None, f"Error: {response.status_code} - {response.text}"
 
 @app.route('/')
 def index():
@@ -104,6 +120,16 @@ def api_transcriptions():
         executor.submit(fetch_transcription, video)
 
     return jsonify({'transcriptions': transcriptions})
+
+@app.route('/api/market-news')
+def api_market_news():
+    app.logger.debug("Fetching market news and sentiment data.")
+    news_data, error = get_market_news_and_sentiment()
+    if error:
+        app.logger.error(f"Market news error: {error}")
+        return jsonify({'error': error}), 500
+    app.logger.debug(f"Market news data: {news_data}")
+    return jsonify(news_data)
 
 @app.route('/api/category/<category>')
 def api_category(category):

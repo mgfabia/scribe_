@@ -92,10 +92,15 @@
 
         .container {
             display: flex;
+            margin-top: 120px; /* Adjusted to account for fixed header */
+        }
+
+        .main-content {
+            flex: 3;
+            display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
-            margin-top: 120px; /* Adjusted to account for fixed header */
             background: #fff;
         }
 
@@ -254,6 +259,34 @@
             margin-top: 20px;
             display: none; /* Hidden by default */
         }
+
+        .sidebar {
+            flex: 1;
+            padding: 20px;
+            background: #fff;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .news-item {
+            margin-bottom: 20px;
+        }
+
+        .news-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .news-summary {
+            font-size: 1rem;
+            color: #555;
+        }
     </style>
 </head>
 <body>
@@ -267,21 +300,27 @@
         </div>
     </header>
     <div class="container">
-        <div class="tab-menu">
-            <div onclick="loadCategory('Interviews')">Interviews</div>
-            <div onclick="loadCategory('Business')">Business</div>
-            <div onclick="loadCategory('Real Estate')">Real Estate</div>
+        <div class="main-content">
+            <div class="tab-menu">
+                <div onclick="loadCategory('Interviews')">Interviews</div>
+                <div onclick="loadCategory('Business')">Business</div>
+                <div onclick="loadCategory('Real Estate')">Real Estate</div>
+            </div>
+            <div class="search-container">
+                <input type="text" id="youtube-url" placeholder="Enter YouTube URL">
+                <button onclick="fetchTranscription()">Get Transcription</button>
+            </div>
+            <div class="search-results" id="search-results"></div>
+            <hr>
+            <div class="transcription-container" id="transcription-container">
+                <!-- Transcription items will be appended here by JavaScript -->
+            </div>
+            <div class="loader" id="loader"></div>
         </div>
-        <div class="search-container">
-            <input type="text" id="youtube-url" placeholder="Enter YouTube URL">
-            <button onclick="fetchTranscription()">Get Transcription</button>
+        <div class="sidebar">
+            <h2>Market News and Sentiment</h2>
+            <div id="market-news"></div>
         </div>
-        <div class="search-results" id="search-results"></div>
-        <hr>
-        <div class="transcription-container" id="transcription-container">
-            <!-- Transcription items will be appended here by JavaScript -->
-        </div>
-        <div class="loader" id="loader"></div>
     </div>
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
@@ -289,6 +328,7 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             loadTranscriptions();
+            loadMarketNews();
         });
 
         function loadTranscriptions() {
@@ -424,6 +464,45 @@
                 .catch(error => {
                     document.getElementById('loader').style.display = 'none';
                     console.error('Error fetching transcription:', error);
+                });
+        }
+
+        function loadMarketNews() {
+            fetch('/api/market-news')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('market-news');
+                    container.innerHTML = ''; // Clear the container first
+                    if (data.feed) {
+                        data.feed.forEach(newsItem => {
+                            const div = document.createElement('div');
+                            div.className = 'news-item';
+
+                            const title = document.createElement('div');
+                            title.className = 'news-title';
+                            title.textContent = newsItem.title;
+
+                            const summary = document.createElement('div');
+                            summary.className = 'news-summary';
+                            summary.textContent = newsItem.summary;
+
+                            const link = document.createElement('a');
+                            link.href = newsItem.url;
+                            link.target = '_blank';
+                            link.textContent = 'Read more';
+                            link.className = 'read-more';
+
+                            div.appendChild(title);
+                            div.appendChild(summary);
+                            div.appendChild(link);
+                            container.appendChild(div);
+                        });
+                    } else {
+                        container.innerHTML = '<p>No news available.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching market news:', error);
                 });
         }
 

@@ -129,5 +129,51 @@ function loadTranscriptions() {
         .catch(error => console.error('Error:', error));
 }
 
+function loadMarketNews() {
+    console.log('Fetching market news...'); // Add logging
+    fetch('/api/market-news')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Market news data:', data); // Add logging
+            const container = document.getElementById('market-news');
+            container.innerHTML = ''; // Clear the container first
+            if (data.feed) {
+                data.feed.forEach(newsItem => {
+                    const div = document.createElement('div');
+                    div.className = 'news-item';
+
+                    const title = document.createElement('div');
+                    title.className = 'news-title';
+                    title.textContent = newsItem.title;
+
+                    const summary = document.createElement('div');
+                    summary.className = 'news-summary';
+                    summary.textContent = newsItem.summary;
+
+                    const link = document.createElement('a');
+                    link.href = newsItem.url;
+                    link.target = '_blank';
+                    link.textContent = 'Read more';
+                    link.className = 'read-more';
+
+                    div.appendChild(title);
+                    div.appendChild(summary);
+                    div.appendChild(link);
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = '<p>No news available.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching market news:', error);
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    loadTranscriptions();
+    loadMarketNews();
+});
+
 // Call this function when the page loads
 document.addEventListener('DOMContentLoaded', loadTranscriptions);
