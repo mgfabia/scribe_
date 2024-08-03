@@ -211,12 +211,11 @@
     </header>
     <div class="container">
         <div class="transcription-container">
-            <div class="video-title">{{ title }}</div>
-            <div class="video-author">{{ author }}</div>
-            <div class="transcription">{{ transcription }}</div>
-            <a class="download-btn" href="/download/{{ request.view_args['video_id'] }}">Download Transcription</a>
+            <h2 class="video-title">{{ title }}</h2>
+            <p class="video-author">{{ author }}</p>
+            <pre class="transcription">{{ transcription }}</pre>
+            <a href="{{ url_for('download_transcription', video_id=video_id) }}" class="download-btn">Download Transcription</a>
         </div>
-        <a href="#top" class="back-to-top">Back to the Top</a>
     </div>
     <script>
         document.getElementById('dark-mode-switch').addEventListener('change', function () {

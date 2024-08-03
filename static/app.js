@@ -180,5 +180,19 @@ document.addEventListener('DOMContentLoaded', function () {
     loadMarketNews();
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadButtons = document.querySelectorAll('.download-btn');
+    
+    downloadButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            const videoId = this.getAttribute('data-video-id');
+            
+            // Trigger the download
+            window.location.href = `/download/${videoId}`;
+        });
+    });
+});
+
 // Call this function when the page loads
 document.addEventListener('DOMContentLoaded', loadTranscriptions);

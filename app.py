@@ -2,22 +2,21 @@ import os
 import requests
 import logging
 import random
-from flask import Flask, render_template, jsonify
-from alpha_vantage.alphaintelligence import AlphaIntelligence
+from flask import Flask, render_template, jsonify, send_file, make_response
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 from concurrent.futures import ThreadPoolExecutor
-
 app = Flask(__name__)
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
-
 # Add your YouTube Data API key here
 YOUTUBE_API_KEY = 'AIzaSyBq-xfGtyUbbV1UjLVAf18FuYc4iJ_g2-M'
 
 # Add your Alpha Vantage API key here
 ALPHA_VANTAGE_API_KEY = 'QJ6Po979I5HXQJVL'
+
+# Directory where transcriptions are stored
+TRANSCRIPTION_DIR = 'transcriptions'
 
 # Specify the channel IDs
 CHANNEL_IDS = {
@@ -25,9 +24,7 @@ CHANNEL_IDS = {
     'Business': ['UCGq-a57w-aPwyi3pW7XLiHw', 'UC1E1SVcVyU3ntWMSQEp38Yw'],  # Founders Podcast, The Prof G Show
     'Real Estate': ['UC-yRDvpR99LUc5l7i7jLzew', 'UCf0PBRjhf0rF8fWBIxTuoWA']  # Bg2 Pod, 20VC - The Twenty Minute VC
 }
-
 executor = ThreadPoolExecutor()
-
 def get_latest_videos(channel_id, max_results=10):
     url = f'https://www.googleapis.com/youtube/v3/search?key={YOUTUBE_API_KEY}&channelId={channel_id}&part=snippet,id&order=date&maxResults={max_results}'
     response = requests.get(url)
@@ -42,7 +39,6 @@ def get_latest_videos(channel_id, max_results=10):
             if video_id:
                 videos.append({'id': video_id, 'title': title, 'author': author})
     return videos
-
 def get_transcription(video_id):
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
@@ -57,23 +53,63 @@ def get_transcription(video_id):
     except Exception as e:
         return None, f"An error occurred: {str(e)}"
 
-import requests
-
-def get_market_news_and_sentiment():
+def get_market_news_and_sentiment(tickers='AAPL,MSFT,GOOG'):
     url = 'https://www.alphavantage.co/query'
     params = {
         'function': 'NEWS_SENTIMENT',
-        'tickers': 'AAPL,MSFT,GOOG',  # Add your desired tickers here
-        'topics': 'earnings,ipo,technology,financial_markets,economy_macro,economy_fiscal',
-        'apikey': 'QJ6Po979I5HXQJVL'
+        'tickers': tickers,
+        'apikey': ALPHA_VANTAGE_API_KEY
     }
-    
     response = requests.get(url, params=params)
-    
     if response.status_code == 200:
         return response.json(), None
     else:
         return None, f"Error: {response.status_code} - {response.text}"
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+@app.route('/api/transcriptions')
+def api_transcriptions():
+    transcriptions = []
+    additional_videos = []
+    def fetch_transcription(video):
+        transcription, error = get_transcription(video['id'])
+        logging.debug(f'Title: {video["title"]}, Author: {video["author"]}')
+        if error:
+            transcription_text = f"Error: {error}"
+        else:
+            transcription_text = ' '.join(transcription.split()[:140]) + '...'  # First 140 words
+        transcriptions.append({
+            'id': video['id'],
+            'title': video['title'] or 'Title not found',
+            'author': video['author'] or 'Author not found',
+            'transcription': transcription_text
+        })
+    # Fetch the latest video from each channel
+    for category, channels in CHANNEL_IDS.items():
+        for channel_id in channels:
+            latest_videos = get_latest_videos(channel_id, max_results=1)
+            logging.debug(f'Latest video for channel {channel_id}: {latest_videos}')
+            for video in latest_videos:
+                executor.submit(fetch_transcription, video)
+    # Fetch additional videos from each channel
+    for category, channels in CHANNEL_IDS.items():
+        for channel_id in channels:
+            latest_videos = get_latest_videos(channel_id, max_results=10)
+            logging.debug(f'Additional videos for channel {channel_id}: {latest_videos[1:]}')
+            for video in latest_videos[1:]:  # Skip the first video as it is already added
+                additional_videos.append(video)
+    # Log the additional videos to ensure they are fetched correctly
+    logging.debug(f'Additional videos: {additional_videos}')
+    # Randomly select 5 additional videos
+    random.shuffle(additional_videos)
+    additional_videos = additional_videos[:5]
+    # Add the additional videos to the transcriptions list
+    for video in additional_videos:
+        executor.submit(fetch_transcription, video)
+
+    return jsonify({'transcriptions': transcriptions})
 
 @app.route('/api/market-news')
 def api_market_news():
@@ -85,65 +121,11 @@ def api_market_news():
     app.logger.debug(f"Market news data: {news_data}")
     return jsonify(news_data)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/api/transcriptions')
-def api_transcriptions():
-    transcriptions = []
-    additional_videos = []
-
-    def fetch_transcription(video):
-        transcription, error = get_transcription(video['id'])
-        logging.debug(f'Title: {video["title"]}, Author: {video["author"]}')
-        if error:
-            transcription_text = f"Error: {error}"
-        else:
-            transcription_text = ' '.join(transcription.split()[:140]) + '...'  # First 140 words
-        transcriptions.append({
-            'id': video['id'],
-            'title': video['title'] or 'Title not found',
-            'author': video['author'] or 'Author not found',
-            'transcription': transcription_text
-        })
-
-    # Fetch the latest video from each channel
-    for category, channels in CHANNEL_IDS.items():
-        for channel_id in channels:
-            latest_videos = get_latest_videos(channel_id, max_results=1)
-            logging.debug(f'Latest video for channel {channel_id}: {latest_videos}')
-            for video in latest_videos:
-                executor.submit(fetch_transcription, video)
-
-    # Fetch additional videos from each channel
-    for category, channels in CHANNEL_IDS.items():
-        for channel_id in channels:
-            latest_videos = get_latest_videos(channel_id, max_results=10)
-            logging.debug(f'Additional videos for channel {channel_id}: {latest_videos[1:]}')
-            for video in latest_videos[1:]:  # Skip the first video as it is already added
-                additional_videos.append(video)
-
-    # Log the additional videos to ensure they are fetched correctly
-    logging.debug(f'Additional videos: {additional_videos}')
-
-    # Randomly select 5 additional videos
-    random.shuffle(additional_videos)
-    additional_videos = additional_videos[:5]
-
-    # Add the additional videos to the transcriptions list
-    for video in additional_videos:
-        executor.submit(fetch_transcription, video)
-
-    return jsonify({'transcriptions': transcriptions})
-
 @app.route('/api/category/<category>')
 def api_category(category):
     if category not in CHANNEL_IDS:
         return jsonify({'error': 'Invalid category'}), 400
-
     transcriptions = []
-
     def fetch_transcription(video):
         transcription, error = get_transcription(video['id'])
         logging.debug(f'Title: {video["title"]}, Author: {video["author"]}')
@@ -157,13 +139,11 @@ def api_category(category):
             'author': video['author'] or 'Author not found',
             'transcription': transcription_text
         })
-
     for channel_id in CHANNEL_IDS[category]:
         latest_videos = get_latest_videos(channel_id, max_results=3)
         logging.debug(f'Latest videos for category {category}, channel {channel_id}: {latest_videos}')
         for video in latest_videos:
             executor.submit(fetch_transcription, video)
-
     return jsonify({'transcriptions': transcriptions})
 
 @app.route('/transcription/<video_id>')
@@ -181,7 +161,38 @@ def full_transcription(video_id):
         full_transcription_text = f"Error: {error}"
     else:
         full_transcription_text = transcription
-    return render_template('transcription.html', title=title, author=author, transcription=full_transcription_text)
+    return render_template('transcription.html', 
+                           title=title, 
+                           author=author, 
+                           transcription=full_transcription_text, 
+                           video_id=video_id)  # Make sure video_id is passed here
+
+@app.route('/download/<video_id>', methods=['GET'])
+@app.route('/download/', defaults={'video_id': None}, methods=['GET'])
+def download_transcription(video_id):
+    app.logger.info(f"Attempting to download transcription for video_id: {video_id}")
+    
+    if video_id is None:
+        app.logger.error("No video ID provided")
+        return "Error: No video ID provided", 400
+    
+    transcription, error = get_transcription(video_id)
+    
+    if error:
+        app.logger.error(f"Error getting transcription: {error}")
+        return f"Error: {error}", 400
+    
+    app.logger.info(f"Successfully retrieved transcription for video_id: {video_id}")
+    
+    # Create a response with the transcription text
+    response = make_response(transcription)
+    
+    # Set the headers for file download
+    response.headers["Content-Disposition"] = f"attachment; filename={video_id}_transcription.txt"
+    response.headers["Content-Type"] = "text/plain"
+    
+    app.logger.info(f"Sending transcription file for video_id: {video_id}")
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
