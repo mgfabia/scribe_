@@ -45,9 +45,8 @@ def process_channels(channel_urls, output_dir='.'):
 
 # Array of YouTube channel URLs
 channel_urls = [
-    "https://www.youtube.com/@ycombinator",
-    "https://www.youtube.com/@LexClips",
-    "https://www.youtube.com/@JREClips"
+    "https://www.youtube.com/c/JREClips/videos",
+    "https://www.youtube.com/channel/UCnxGkOGNMqQEUMvroOWps6Q"
 ]
 
 output_dir = '.'  # Specify the output directory if needed
